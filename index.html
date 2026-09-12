@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>24-Hour Prayer Wall</title>
+<meta name="description" content="A peaceful sanctuary where people can leave prayers and pray for one another.">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--cream:#fbf4e9;--ivory:#fffaf3;--rose:#c98f8d;--gold:#a7782c;--ink:#4b3a32;--line:#ead9c7}
+*{box-sizing:border-box}body{margin:0;background:var(--cream);color:var(--ink);font-family:Georgia,serif}
+nav{position:sticky;top:0;z-index:10;background:#fffaf3ee;backdrop-filter:blur(8px);display:flex;gap:24px;justify-content:center;padding:14px;box-shadow:0 1px 10px #0001}nav a{color:var(--ink);text-decoration:none;font-size:13px;letter-spacing:.08em}
+.hero{padding:70px 6%;min-height:570px;display:grid;grid-template-columns:1.2fr .8fr;gap:45px;align-items:center;background:linear-gradient(135deg,#fffaf1,#f3ded0 55%,#e8cbb8)}
+h1{font-size:clamp(48px,7vw,82px);font-weight:400;line-height:.94;color:#966821;margin:0}.script{font-style:italic;font-size:31px;margin:25px 0 10px}.tag{font-size:19px;line-height:1.6;max-width:620px}
+button{border:0;border-radius:10px;padding:14px 18px;background:var(--rose);color:#fff;font:inherit;cursor:pointer}button:hover{filter:brightness(.96)}
+.sanctuary{height:400px;border:10px solid #d6b889;border-radius:210px 210px 24px 24px;background:radial-gradient(circle at 50% 52%,#fff8b9,#f1c16d 22%,#e9a66f 43%,#d69a80 60%,#f1ddc6 61%);display:flex;align-items:flex-end;justify-content:center;padding-bottom:55px;box-shadow:0 18px 45px #5c3d2022}.sanctuary span{font-size:20px;letter-spacing:.18em;text-align:center;color:#65472c}
+section{padding:62px 6%}.title{text-align:center;font-size:36px;font-weight:400;color:#805b2d;margin:0 0 28px}.box{max-width:650px;margin:auto;background:#fffaf3f5;border:1px solid var(--line);border-radius:18px;padding:25px;box-shadow:0 15px 35px #5c3d2015}
+form{display:grid;gap:12px}textarea,input,select{width:100%;padding:13px;border:1px solid #dbc7b4;border-radius:10px;background:#fffdfa;font:inherit;color:var(--ink)}textarea{min-height:130px;resize:vertical}
+.notice{display:none;padding:11px;border-radius:10px;background:#e9f2e5}.small{font-size:12px;opacity:.75;line-height:1.5}.wall{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:18px;max-width:1200px;margin:auto}.prayer{background:var(--ivory);border:1px solid var(--line);border-radius:16px;padding:20px;box-shadow:0 8px 25px #5c3d2010}.prayer p{font-size:18px;line-height:1.5;margin-top:0}.meta{font-size:13px;opacity:.7}.pray{margin-top:14px;width:100%;background:#d49b96}.quote{text-align:center;background:linear-gradient(120deg,#ead0bd,#f8e9d8);font-style:italic;font-size:26px}.loading{text-align:center;opacity:.7}.error{color:#8d3f38;text-align:center}
+footer{text-align:center;padding:30px;background:#4e4038;color:#fff7ed;font-size:14px}
+@media(max-width:800px){.hero{grid-template-columns:1fr}.sanctuary{height:290px}nav{overflow:auto;justify-content:flex-start}}
+</style>
+</head>
+<body>
+<nav><a href="#home">HOME</a><a href="#wall">PRAYER WALL</a><a href="#submit">SUBMIT A PRAYER</a><a href="#about">ABOUT</a></nav>
+
+<header class="hero" id="home">
+<div><h1>24-HOUR<br>PRAYER WALL</h1><div class="script">You are never alone.</div>
+<p class="tag">Leave your prayer here, and let others pray with you. A peaceful sanctuary for hope, healing, guidance and gratitude.</p>
+<a href="#submit"><button>🙏 Submit a Prayer</button></a></div>
+<div class="sanctuary"><span>PRAY<br>SHARE<br>HOPE<br>HEALING<br>PEACE</span></div>
+</header>
+
+<section id="submit"><h2 class="title">Submit a Prayer</h2><div class="box">
+<form id="form">
+<textarea id="text" maxlength="600" required placeholder="Share your prayer here..."></textarea>
+<input id="name" maxlength="60" placeholder="Your name (optional)">
+<select id="category"><option>General</option><option>Healing</option><option>Family</option><option>Guidance</option><option>Strength</option><option>Gratitude</option><option>Peace</option></select>
+<label><input id="anon" type="checkbox" style="width:auto"> Post anonymously</label>
+<button type="submit">🕊️ Submit Prayer</button>
+<div id="notice" class="notice">Thank you. Your prayer was submitted for moderation. Once approved, it will appear on the wall for 24 hours.</div>
+<div id="formerror" class="error"></div>
+<p class="small">Please don't include addresses, phone numbers, passwords, medical records, or other private information. Prayer requests are for spiritual reflection and community support.</p>
+</form></div></section>
+
+<section id="wall"><h2 class="title">Recent Prayers</h2><div id="wallgrid" class="wall"><div class="loading">Loading prayers… 🕊️</div></div></section>
+
+<section class="quote" id="about">“When you pray for others, you become part of something bigger.”<br><span class="small">A place of hope, kindness and Higher Power–centered reflection.</span></section>
+<footer>🕊️ 24-Hour Prayer Wall · Pray • Share • Support • Hope</footer>
+
+<script>
+/* STEP 1: Put your Supabase Project URL and ANON/PUBLISHABLE key below.
+   NEVER put your Supabase service_role/secret key in this file. */
+const SUPABASE_URL = "PASTE_YOUR_SUPABASE_PROJECT_URL_HERE";
+const SUPABASE_ANON_KEY = "PASTE_YOUR_SUPABASE_ANON_KEY_HERE";
+
+const ready = !SUPABASE_URL.includes("PASTE_") && !SUPABASE_ANON_KEY.includes("PASTE_");
+const db = ready ? window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY) : null;
+
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]))}
+function ago(iso){let m=Math.floor((Date.now()-new Date(iso))/60000);if(m<1)return"just now";if(m<60)return m+" min ago";let h=Math.floor(m/60);return h+" hour"+(h===1?"":"s")+" ago"}
+async function load(){
+ const grid=document.getElementById("wallgrid");
+ if(!db){grid.innerHTML='<div class="error">The site is ready, but it still needs your Supabase connection settings. Follow SETUP.md in this folder.</div>';return}
+ const cutoff=new Date(Date.now()-86400000).toISOString();
+ const {data,error}=await db.from("prayers").select("id,prayer_text,display_name,category,created_at,prayer_count").eq("approved",true).gte("created_at",cutoff).order("created_at",{ascending:false}).limit(60);
+ if(error){grid.innerHTML='<div class="error">The prayer wall could not be loaded yet. Please check the setup.</div>';return}
+ if(!data.length){grid.innerHTML='<div class="loading">No approved prayers are showing right now. Be the first to leave one. 🕊️</div>';return}
+ grid.innerHTML=data.map(p=>`<article class="prayer"><p>🕊️ ${esc(p.prayer_text)}</p><div class="meta">${esc(p.display_name||"Anonymous")} · ${ago(p.created_at)} · ${esc(p.category)}</div><button class="pray" data-id="${p.id}">♡ I Prayed For This · <span>${p.prayer_count||0}</span></button></article>`).join("");
+ document.querySelectorAll(".pray").forEach(b=>b.onclick=async()=>{b.disabled=true;const {data,error}=await db.rpc("pray_for_request",{request_id:b.dataset.id});if(!error){b.querySelector("span").textContent=data; b.disabled=false}else{b.disabled=false}});
+}
+document.getElementById("form").onsubmit=async e=>{
+ e.preventDefault(); const err=document.getElementById("formerror"), notice=document.getElementById("notice");err.textContent="";
+ if(!db){err.textContent="Please finish the Supabase setup first.";return}
+ const anonymous=document.getElementById("anon").checked;
+ const payload={prayer_text:document.getElementById("text").value.trim(),display_name:anonymous?"Anonymous":(document.getElementById("name").value.trim()||"Anonymous"),category:document.getElementById("category").value,approved:false};
+ const {error}=await db.from("prayers").insert(payload);
+ if(error){err.textContent="We couldn't submit that prayer yet. Please try again.";return}
+ e.target.reset();notice.style.display="block";setTimeout(()=>notice.style.display="none",6000);
+};
+load();setInterval(load,60000);
+</script>
+</body></html>
